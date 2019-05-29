@@ -1,0 +1,52 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "93ddb70c84e514123aabda4b41a5a7c0ca25877a1d9e0d68c5c458729679d6f6"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "3.7"
+        },
+        "sources": [
+            {
+                "name": "pypi",
+                "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "asyncqt": {
+            "hashes": [
+                "sha256:8b1507c968c85cf0b7eee5d2a887162d38af15fb8c5b1ec25beed6025d7383ac",
+                "sha256:e0f51a0c27d7276b50ef2a4539e0d56bbcf5e837854caba40b41741dbe36ffb3"
+            ],
+            "index": "pypi",
+            "version": "==0.7.0"
+        },
+        "pyside2": {
+            "hashes": [
+                "sha256:485bea45a860df5eb13714c84f13b0b40bc68c4f799f6f941a144dd8e25aa7ad",
+                "sha256:4a96d35959f6b1ec6585b55daa5cd1ff9a25f8479acdff9ca81702467b304e59",
+                "sha256:565ec327615253901ffa25edcaa5039b1f854a0d782aad775c3cb62575fedb28",
+                "sha256:6eb9e6763357dd05de87bf6ac79a8fcfb3164315e3c3004604a793db4fe1a075",
+                "sha256:813ba1decc908018c8dc4223c24a0ea3b5ead8c3a3347eb69633af327e449dea",
+                "sha256:8ddcf50fee00cb24f8760423725e8d0ba2a6e405e48fb3112b2d22b0864bb56a"
+            ],
+            "index": "pypi",
+            "version": "==5.12.3"
+        },
+        "shiboken2": {
+            "hashes": [
+                "sha256:00f16d39cc7934934569ee148a89c2068992f66dbae4c50824087549d1bd7b7a",
+                "sha256:209f1e8dc71b7d4262474ce0b1716b8e0b7db525c20d85849f5ddd249abf1908",
+                "sha256:acbc29f88a144a55ca11b17357024e594a2fecd88d93c1a020aac8944fad970a",
+                "sha256:bd06cc77fecec3f232bdfb82be20825f8a05c17f3b034b42f884f940092ba4fc",
+                "sha256:c1e5c75fdcb6ad9b47521ada5b35a7f7ae619895563b9708fee6f0045d09a002",
+                "sha256:d7d30ae3ba20556d5ddab5879a629a7d851d3f19255b76ccd21749429e6a3271"
+            ],
+            "version": "==5.12.3"
+        }
+    },
+    "develop": {}
+}
