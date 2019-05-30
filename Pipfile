@@ -11,6 +11,7 @@ isort = "*"
 [packages]
 pyside2 = "*"
 asyncqt = "*"
+aiohttp = "*"
 
 [requires]
 python_version = "3.7"
