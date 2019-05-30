@@ -5,7 +5,7 @@ import os
 import re
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 PATTERN = re.compile(r"^:(.*?)!(.*?@.*?\.tmi\.twitch\.tv) (.*?) #(.*?) :(.*?)$")
 
@@ -17,18 +17,30 @@ class Actions(Enum):
 @dataclass
 class Auth:
     username: str
-    password: str
     oauthtok: str
+
+    client_id: str
+    client_secret: str
 
     @classmethod
     def from_json(cls, file: os.PathLike):
         with open(os.fspath(file)) as f:
             content = json.loads(f.read())
-        return cls(**content)
+        return cls(**content["chat"], **content["helix"])  # type: ignore
+
+
+class SingleableChannel:
+    def __init_subclass__(cls: SingleableChannel) -> None:
+        cls._singletons: Dict[Tuple[Any, ...], SingleableChannel] = {}
+
+    def __new__(cls: SingleableChannel, *args) -> SingleableChannel:
+        if not cls._singletons.get(args):
+            cls._singletons[args] = super().__new__(cls)
+        return cls._singletons[args]
 
 
 @dataclass
-class Channel:
+class Channel(SingleableChannel):
     name: str
 
     def __str__(self):

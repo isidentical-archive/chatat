@@ -7,7 +7,7 @@ from typing import Optional, Sequence
 from chatat.twitch import Auth, Channel, Message
 
 
-class TwitchChatProtocol(asyncio.Protocol):
+class TwitchProtocol(asyncio.Protocol):
     def __init__(
         self, auth: Auth, channels: Sequence[Channel], on_con_lost: asyncio.Future
     ) -> None:
@@ -27,6 +27,12 @@ class TwitchChatProtocol(asyncio.Protocol):
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
+
+class TwitchHelixProtocol(TwitchProtocol):
+    pass
+
+
+class TwitchChatProtocol(TwitchProtocol):
     def _send(self, cmd: str, value: str) -> None:
         request = f"{cmd.upper()} {value}\r\n"
         self.transport.write(request.encode("utf-8"))
