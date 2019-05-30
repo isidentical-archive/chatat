@@ -2,12 +2,15 @@ import asyncio
 import logging
 import sys
 from contextlib import suppress
-from typing import Sequence, Optional
+from typing import Optional, Sequence
+
 from chatat.twitch import Auth, Channel, Message
 
 
 class TwitchChatProtocol(asyncio.Protocol):
-    def __init__(self, auth: Auth, channels: Sequence[Channel], on_con_lost: asyncio.Future) -> None:
+    def __init__(
+        self, auth: Auth, channels: Sequence[Channel], on_con_lost: asyncio.Future
+    ) -> None:
         self.on_con_lost = on_con_lost
         self._auth = auth
         self._channels = channels
@@ -24,26 +27,25 @@ class TwitchChatProtocol(asyncio.Protocol):
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
-
     def _send(self, cmd: str, value: str) -> None:
         request = f"{cmd.upper()} {value}\r\n"
         self.transport.write(request.encode("utf-8"))
 
-    def connection_made(self, transport: asyncio.transports.Transport):
+    def connection_made(self, transport: asyncio.transports.Transport):  # type: ignore
         self.transport = transport
 
         self._send("pass", self._auth.oauthtok)
         self._send("nick", self._auth.username)
         with suppress(ValueError):
-            ip, port = transport.get_extra_info('peername')
+            ip, port = transport.get_extra_info("peername")
             self.logger.info(f"Connection made to {ip}:{port}")
         for channel in self._channels:
             self._send("join", channel)
 
-    def data_received(self, data: bytes) -> None:
-        msg = Message.from_raw(data.decode())
-        if msg:
-            self.logger.info(msg)
+    def data_received(self, raw_msg: bytes) -> None:
+        data = raw_msg.decode()
+        msg = Message.from_raw(data) or data
+        self.logger.info(msg)
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         self.logger.info("The server closed the connection")

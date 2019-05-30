@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import os
 import json
+import os
 import re
 from dataclasses import dataclass
-from typing import Union
 from enum import Enum, auto
+from typing import Optional, Union
 
 PATTERN = re.compile(r"^:(.*?)!(.*?@.*?\.tmi\.twitch\.tv) (.*?) #(.*?) :(.*?)$")
 
@@ -45,7 +45,7 @@ class Message:
     channel: Channel
 
     @classmethod
-    def from_raw(cls, raw_msg: str) -> Message:
+    def from_raw(cls, raw_msg: str) -> Optional[Message]:
         match = re.match(PATTERN, raw_msg)
         if match:
             return cls(
@@ -55,3 +55,4 @@ class Message:
                 getattr(Actions, match.group(3)),
                 Channel(match.group(4)),
             )
+        return None

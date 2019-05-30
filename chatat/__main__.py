@@ -1,4 +1,5 @@
 import asyncio
+
 from chatat.client import TwitchChatProtocol
 from chatat.twitch import Auth, Channel
 
