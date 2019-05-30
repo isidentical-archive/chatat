@@ -4,22 +4,25 @@ import sys
 from contextlib import suppress
 from typing import Optional, Sequence
 
+import aiohttp
+
 from chatat.twitch import Auth, Channel, Message
 
 
-class TwitchProtocol(asyncio.Protocol):
-    def __init__(
-        self, auth: Auth, channels: Sequence[Channel], on_con_lost: asyncio.Future
-    ) -> None:
-        self.on_con_lost = on_con_lost
+class _Protocol:
+    def __init__(self, auth: Auth, loop: asyncio.BaseEventLoop, **kwargs) -> None:
+
+        self.on_con_lost = kwargs.pop("on_con_lost", None)
+        self.channels = kwargs.pop("channels", None)
+        self.pubpen = kwargs.pop("pubpen", None)
+
+        self.loop = loop
         self._auth = auth
-        self._channels = channels
 
         self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)
 
         handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.INFO)
+        handler.setLevel(logging.ERROR)
 
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -28,30 +31,63 @@ class TwitchProtocol(asyncio.Protocol):
         self.logger.addHandler(handler)
 
 
-class TwitchHelixProtocol(TwitchProtocol):
-    pass
+class TwitchHelixProtocol(_Protocol):
+    BASE = "https://api.twitch.tv/helix/{}"
+
+    @classmethod
+    async def session(cls, *args, **kwargs):
+        inst = cls(*args, **kwargs)
+
+        jar = aiohttp.CookieJar(unsafe=True)
+        inst.session = aiohttp.ClientSession(
+            cookie_jar=jar,
+            headers={
+                "Client-ID": inst._auth.client_id,
+                "Authorization": f"Bearer {inst._auth.client_secret}",
+            },
+        )
+        return inst
+
+    async def get(self, endpoint: str, **kwargs):
+        self.logger.debug(f"Getting {endpoint} with {kwargs}")
+        async with self.session.get(
+            self.BASE.format(endpoint), params=kwargs
+        ) as result:
+            content = await result.json()
+        return content
 
 
-class TwitchChatProtocol(TwitchProtocol):
-    def _send(self, cmd: str, value: str) -> None:
+class TwitchChatProtocol(_Protocol, asyncio.Protocol):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pubpen.subscribe("send", self._send_to_channel)
+
+    def _send_irc_command(self, cmd: str, value: str) -> None:
         request = f"{cmd.upper()} {value}\r\n"
         self.transport.write(request.encode("utf-8"))
 
-    def connection_made(self, transport: asyncio.transports.Transport):  # type: ignore
+    def _send_to_channel(self, message: Message) -> None:
+        self._send_irc_command("privmsg", f"{message.channel} :{message.message}")
+
+    def connection_made(
+        self, transport: asyncio.transports.Transport
+    ) -> None:  # type: ignore
         self.transport = transport
 
-        self._send("pass", self._auth.oauthtok)
-        self._send("nick", self._auth.username)
+        self._send_irc_command("pass", self._auth.oauthtok)
+        self._send_irc_command("nick", self._auth.username)
         with suppress(ValueError):
             ip, port = transport.get_extra_info("peername")
             self.logger.info(f"Connection made to {ip}:{port}")
-        for channel in self._channels:
-            self._send("join", channel)
+        for channel in self.channels:
+            self._send_irc_command("join", channel)
 
     def data_received(self, raw_msg: bytes) -> None:
         data = raw_msg.decode()
-        msg = Message.from_raw(data) or data
-        self.logger.info(msg)
+        msg = Message.from_raw(data)
+        self.logger.info(msg or data)
+        if msg:
+            self.pubpen.publish("message", msg)
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         self.logger.info("The server closed the connection")

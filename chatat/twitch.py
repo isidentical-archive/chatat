@@ -49,12 +49,16 @@ class Channel(SingleableChannel):
 
 @dataclass
 class Message:
-    username: str
+    author: str
     message: str
     host: str
 
     action: Actions
     channel: Channel
+
+    @classmethod
+    def from_simple(cls, channel: Channel, author: str, message: str):
+        return cls(author, message, None, None, channel)
 
     @classmethod
     def from_raw(cls, raw_msg: str) -> Optional[Message]:
@@ -68,3 +72,6 @@ class Message:
                 Channel(match.group(4)),
             )
         return None
+
+    def __str__(self):
+        return self.message

@@ -9,8 +9,8 @@ black = "==19.3b0"
 isort = "*"
 
 [packages]
-pyside2 = "*"
-asyncqt = "*"
+aiohttp = "*"
+pubmarine = "*"
 
 [requires]
 python_version = "3.7"
