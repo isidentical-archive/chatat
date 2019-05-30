@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import json
 import re
@@ -43,7 +45,7 @@ class Message:
     channel: Channel
 
     @classmethod
-    def from_raw(cls, raw_msg):
+    def from_raw(cls, raw_msg: str) -> Message:
         match = re.match(PATTERN, raw_msg)
         if match:
             return cls(
