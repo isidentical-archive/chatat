@@ -1,5 +1,6 @@
 import asyncio
 import curses
+import importlib
 
 from pubmarine import PubPen
 
@@ -137,6 +138,16 @@ class ChatInterface:
                 self.channel = None
             message = Message.from_system(f"Quitting from listening {channel}!")
             self.pubpen.publish("quit_channel", channel)
+
+        elif action == "macro" and len(cmd) == 1:
+            cmd, = cmd
+            try:
+                importlib.import_module(cmd.replace(".py", ""))
+                message = Message.from_system("Macros successfully loaded!")
+            except KeyboardInterrupt:
+                message = Message.from_system(
+                    f"Couldn't locate {cmd} macro!", "warning"
+                )
 
         if message:
             self.pubpen.publish("message", message)
