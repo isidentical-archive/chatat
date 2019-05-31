@@ -61,6 +61,9 @@ class TwitchChatProtocol(_Protocol, asyncio.Protocol):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pubpen.subscribe("send", self._send_to_channel)
+        self.pubpen.subscribe("switch_channel", self._switch_channel)
+
+        self._active_channels = []
 
     def _send_irc_command(self, cmd: str, value: str) -> None:
         request = f"{cmd.upper()} {value}\r\n"
@@ -68,6 +71,11 @@ class TwitchChatProtocol(_Protocol, asyncio.Protocol):
 
     def _send_to_channel(self, message: Message) -> None:
         self._send_irc_command("privmsg", f"{message.channel} :{message.message}")
+
+    def _switch_channel(self, channel: Channel) -> None:
+        if not channel in self._active_channels:
+            self._send_irc_command("join", channel)
+            self._active_channels.append(channel)
 
     def connection_made(
         self, transport: asyncio.transports.Transport
@@ -81,6 +89,7 @@ class TwitchChatProtocol(_Protocol, asyncio.Protocol):
             self.logger.info(f"Connection made to {ip}:{port}")
         for channel in self.channels:
             self._send_irc_command("join", channel)
+            self._active_channels.append(channel)
 
     def data_received(self, raw_msg: bytes) -> None:
         data = raw_msg.decode()

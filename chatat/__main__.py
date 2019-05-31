@@ -14,12 +14,15 @@ class ChatInterface:
 
         self.pubpen.subscribe("message", self.show_message)
         self.pubpen.subscribe("new_char", self.show_typing)
+        self.pubpen.subscribe("switch_channel", self.switch_channel)
 
         self._buffer = ""
 
         self.helix = self.pubpen.loop.run_until_complete(
             TwitchHelixProtocol.session(auth, self.pubpen.loop)
         )
+
+        self.channel = None
 
     def __enter__(self):
         self.stdscr = curses.initscr()
@@ -79,14 +82,20 @@ class ChatInterface:
             char = chr(await self.pubpen.loop.run_in_executor(None, self.stdscr.getch))
             self.pubpen.publish("new_char", char)
 
-    def show_typing(self, char):
+    def show_typing(self, char: str):
         if char == "\n":
-            message = Message.from_simple(
-                Channel("btaskaya"), self.auth.username, self._buffer
-            )
+            buffer = self._buffer
+            self.clear_typing()
+            if buffer.startswith(":"):
+                self._run_cmd(buffer[1:])
+                return
+
+            if self.channel is None:
+                return
+
+            message = Message.from_simple(self.channel, self.auth.username, buffer)
             self.pubpen.publish("send", message)
             self.pubpen.publish("message", message)
-            self.clear_typing()
             return
 
         self.input_current_x += 1
@@ -99,6 +108,18 @@ class ChatInterface:
         self.input_buffer.clear()
         self._buffer = ""
         self.input_buffer.refresh()
+
+    def switch_channel(self, channel: Channel):
+        self.channel = channel
+
+    def _run_cmd(self, cmd: str):
+        cmd = cmd.split(" ")
+        if "switch" in cmd:
+            self.channel = Channel(cmd[1])
+            message = Message.from_simple(
+                "<system>", "<system>", f"Channel switched to {self.channel}"
+            )
+            self.pubpen.publish("message", message)
 
 
 if __name__ == "__main__":
