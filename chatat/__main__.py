@@ -1,6 +1,5 @@
 import asyncio
 import curses
-from io import StringIO
 
 from pubmarine import PubPen
 
@@ -16,7 +15,7 @@ class ChatInterface:
         self.pubpen.subscribe("message", self.show_message)
         self.pubpen.subscribe("new_char", self.show_typing)
 
-        self._buffer = StringIO()
+        self._buffer = ""
 
         self.helix = self.pubpen.loop.run_until_complete(
             TwitchHelixProtocol.session(auth, self.pubpen.loop)
@@ -83,7 +82,7 @@ class ChatInterface:
     def show_typing(self, char):
         if char == "\n":
             message = Message.from_simple(
-                Channel("btaskaya"), self.auth.username, self._buffer.getvalue()
+                Channel("btaskaya"), self.auth.username, self._buffer
             )
             self.pubpen.publish("send", message)
             self.pubpen.publish("message", message)
@@ -91,14 +90,14 @@ class ChatInterface:
             return
 
         self.input_current_x += 1
-        self._buffer.write(char)
+        self._buffer += char
         self.input_buffer.addstr(0, self.input_current_x - 1, char.encode("utf-8"))
         self.input_buffer.refresh()
 
     def clear_typing(self):
         self.input_current_x = 0
         self.input_buffer.clear()
-        self._buffer.truncate(0)
+        self._buffer = ""
         self.input_buffer.refresh()
 
 
@@ -125,3 +124,5 @@ if __name__ == "__main__":
         task = loop.create_task(display.get_char())
         loop.run_forever()
         task.cancel()
+        with suppress(ValueError):
+            loop.run_until_complete(task)
