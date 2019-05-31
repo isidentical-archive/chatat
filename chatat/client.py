@@ -62,6 +62,7 @@ class TwitchChatProtocol(_Protocol, asyncio.Protocol):
         super().__init__(*args, **kwargs)
         self.pubpen.subscribe("send", self._send_to_channel)
         self.pubpen.subscribe("switch_channel", self._switch_channel)
+        self.pubpen.subscribe("quit_channel", self._quit_channel)
 
         self._active_channels = []
 
@@ -76,6 +77,17 @@ class TwitchChatProtocol(_Protocol, asyncio.Protocol):
         if not channel in self._active_channels:
             self._send_irc_command("join", channel)
             self._active_channels.append(channel)
+
+    def _quit_channel(self, channel: Channel) -> None:
+        if not channel in self._active_channels:
+            message = Message.from_system(
+                f"Can't quit from a channel ({channel}) that isn't subscribed!",
+                "warning",
+            )
+            self.pubpen.publish("message", message)
+            return
+        self._send_irc_command("part", channel)
+        self._active_channels.remove(channel)
 
     def connection_made(
         self, transport: asyncio.transports.Transport

@@ -114,19 +114,27 @@ class ChatInterface:
 
     def _run_cmd(self, cmd: str):
         cmd = cmd.split(" ")
+        action = cmd.pop(0)
         message = None
-        if "switch" in cmd:
-            self.channel = Channel(cmd[1])
+        if action == "switch" and len(cmd) == 1:
+            self.channel = Channel(*cmd)
             message = Message.from_system(f"Channel switched to {self.channel}")
             self.pubpen.publish("switch_channel", self.channel)
 
-        elif "ls" in cmd and hasattr(self, "_conn"):
+        elif action == "ls" and hasattr(self, "_conn"):
             if len(self._conn._active_channels) < 1:
                 message = "No channel is currently listening"
             else:
                 message = f"Listened channels are {', '.join(map(str, self._conn._active_channels))}"
 
             message = Message.from_system(message)
+
+        elif action == "quit" and len(cmd) == 1:
+            channel = Channel(*cmd)
+            if channel is self.channel:
+                self.channel = None
+            message = Message.from_system(f"Quitting from listening {channel}!")
+            self.pubpen.publish("quit_channel", channel)
 
         if message:
             self.pubpen.publish("message", message)
