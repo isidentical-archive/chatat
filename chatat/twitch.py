@@ -57,6 +57,10 @@ class Message:
     channel: Channel
 
     @classmethod
+    def from_system(cls, message: str, level: str = "info"):
+        return cls("<system>", message, None, None, f"<system:{level}>")
+
+    @classmethod
     def from_simple(cls, channel: Channel, author: str, message: str):
         return cls(author, message, None, None, channel)
 

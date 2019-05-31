@@ -114,11 +114,21 @@ class ChatInterface:
 
     def _run_cmd(self, cmd: str):
         cmd = cmd.split(" ")
+        message = None
         if "switch" in cmd:
             self.channel = Channel(cmd[1])
-            message = Message.from_simple(
-                "<system>", "<system>", f"Channel switched to {self.channel}"
-            )
+            message = Message.from_system(f"Channel switched to {self.channel}")
+            self.pubpen.publish("switch_channel", self.channel)
+
+        elif "ls" in cmd and hasattr(self, "_conn"):
+            if len(self._conn._active_channels) < 1:
+                message = "No channel is currently listening"
+            else:
+                message = f"Listened channels are {', '.join(map(str, self._conn._active_channels))}"
+
+            message = Message.from_system(message)
+
+        if message:
             self.pubpen.publish("message", message)
 
 
@@ -131,16 +141,13 @@ if __name__ == "__main__":
     with ChatInterface(auth, pubpen) as display:
         connection = loop.create_connection(
             lambda: TwitchChatProtocol(
-                auth,
-                loop,
-                channels=[Channel("btaskaya")],
-                on_con_lost=on_con_lost,
-                pubpen=pubpen,
+                auth, loop, channels=[], on_con_lost=on_con_lost, pubpen=pubpen
             ),
             "irc.twitch.tv",
             6667,
         )
-        loop.run_until_complete(connection)
+        _, conn = loop.run_until_complete(connection)
+        display._conn = conn
 
         task = loop.create_task(display.get_char())
         loop.run_forever()
