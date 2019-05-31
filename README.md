@@ -5,6 +5,7 @@
 - Connecting to multiple channels and listening them
 - Switching between channels
 - Quitting channels
+- Twitch Helix API
 - **MACROS**
 
 ## Macros
@@ -21,15 +22,21 @@ And then register with `Macros.macro`
 def macro(*blabla):
     ...
 ```
-The macro takes `publisher` (for publishing actions) and `message` (a `chatat.twitch.Message` object that holds message / author etc.)
+The macro takes `handler` (for accessing services) and `message` (a `chatat.twitch.Message` object that holds message / author etc.)
 ```py
-def on_gnu(publisher, message):
+def on_gnu(handler, message):
     lower_message = message.message.lower()
     author = message.author
     if "linux" in lower_message and "gnu" not in lower_message:
         ...
 ```
-Send with `publisher`
+Send with `handler.publisher`
 ```py
-        publisher.publish("outgoing", f"{author} dude; not linux, GNU/Linux")
+        handler.publisher.publish("outgoing", f"{author} dude; not linux, GNU/Linux")
+```
+### Helix API
+Current version supports usage of Twitch Helix API with a little wrapper.
+```
+await handler.helix.get(endpoint, **params) -> JSON Response
+await handler.helix.get("streams", game_id=33214) -> {...}
 ```

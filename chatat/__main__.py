@@ -26,7 +26,7 @@ class ChatInterface:
         )
 
         self.channel = None
-        self.macros = Macros(pubpen)
+        self.macros = Macros(pubpen, self.helix, loop)
         self.pubpen.subscribe("message", self.macros.dispatch)
 
     def __enter__(self):
