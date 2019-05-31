@@ -5,6 +5,7 @@ from pubmarine import PubPen
 
 from chatat.client import TwitchChatProtocol, TwitchHelixProtocol
 from chatat.twitch import Auth, Channel, Message
+from chatat.macros import Macros
 
 
 class ChatInterface:
@@ -15,6 +16,7 @@ class ChatInterface:
         self.pubpen.subscribe("message", self.show_message)
         self.pubpen.subscribe("new_char", self.show_typing)
         self.pubpen.subscribe("switch_channel", self.switch_channel)
+        self.pubpen.subscribe("outgoing", self.outgoing)
 
         self._buffer = ""
 
@@ -23,6 +25,8 @@ class ChatInterface:
         )
 
         self.channel = None
+        self.macros = Macros(pubpen)
+        self.pubpen.subscribe("message", self.macros.dispatch)
 
     def __enter__(self):
         self.stdscr = curses.initscr()
@@ -93,9 +97,7 @@ class ChatInterface:
             if self.channel is None:
                 return
 
-            message = Message.from_simple(self.channel, self.auth.username, buffer)
-            self.pubpen.publish("send", message)
-            self.pubpen.publish("message", message)
+            self.pubpen.publish("outgoing", buffer)
             return
 
         self.input_current_x += 1
@@ -138,6 +140,11 @@ class ChatInterface:
 
         if message:
             self.pubpen.publish("message", message)
+
+    def outgoing(self, buffer: str):
+        message = Message.from_simple(self.channel, self.auth.username, buffer)
+        self.pubpen.publish("send", message)
+        self.pubpen.publish("message", message)
 
 
 if __name__ == "__main__":
